@@ -6,6 +6,7 @@ app = FastAPI()
 
 
 def get_rate(obj: Cargo):
+    '''this func return current rate from rates.json'''
     with open('rates.json', encoding='utf-8') as f:
         rates = json.load(f)
 
@@ -30,6 +31,9 @@ def get_rate(obj: Cargo):
 @app.post('/cost', response_model=Answer)
 def cost_of_insurance(cargo_info: Cargo):
     answer = Answer()
+    if cargo_info.name != None:
+        answer.cargo_name = cargo_info.name
+        
     try:
         answer.cost = round(cargo_info.declared_cost * get_rate(cargo_info), 2)
     except RateListError as e:
