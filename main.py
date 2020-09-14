@@ -1,42 +1,30 @@
 from fastapi import FastAPI
-from schemas import Cargo, Answer, RateListError
+from fastapi.responses import JSONResponse
+from schemas import Cargo, Answer, RateListError, dbms
+from typing import List
 import json
 
 app = FastAPI()
 
 
-def get_rate(obj: Cargo):
-    '''this func return current rate from rates.json'''
-    with open('rates.json', encoding='utf-8') as f:
-        rates = json.load(f)
-
-    try:
-        rates = rates[str(obj.date)]
-    except KeyError:
-        raise RateListError('not have date')
-
-    for r in rates:
-        try:
-            if r["cargo_type"] == obj.cargo_type:
-                rate = r["rate"]
-                break
-        except KeyError:
-            continue
-    else: 
-        raise RateListError('have not a cargo type')
-
-    return float(rate)
-
-
 @app.post('/cost', response_model=Answer)
 def cost_of_insurance(cargo_info: Cargo):
-    answer = Answer()
-    if cargo_info.name != None:
-        answer.cargo_name = cargo_info.name
-        
     try:
-        answer.cost = round(cargo_info.declared_cost * get_rate(cargo_info), 2)
+        return dbms.save(cargo_info)
     except RateListError as e:
-        answer.error = e.args[0]
+        return JSONResponse(status_code=422, content=e.args)
 
-    return answer
+@app.get('/cost/{cargo_id}', response_model=Answer)
+def get_item_by_id(cargo_id: int):
+    try:
+        return dbms.get_item(cargo_id)
+    except TypeError:
+        return JSONResponse(status_code=404, content=['no cargo information'])
+
+@app.get('/cost/list/all', response_model=List[Answer])
+def get_all_items():
+    items = dbms.get_all_items()
+    if len(items) != 0:
+        return items
+    else: 
+        return JSONResponse(status_code=404, content=['empty list'])
