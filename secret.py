@@ -1,0 +1,5 @@
+db_user = 'cargouser'
+db_pass = 'qwerty'
+db_host = 'localhost'
+db_port = '5432'
+db_name = 'cargo'
